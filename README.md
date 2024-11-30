@@ -5,6 +5,7 @@ IntelliJ 2024 setup :
 - Run once
   - It should create a WAR file in target folder
  - Create JAR Application run configuration
+ - Point to the WAR file in "target" folder
  - Add the Maven Run configuration in Before Launch section
 
 **You can now run the project**
