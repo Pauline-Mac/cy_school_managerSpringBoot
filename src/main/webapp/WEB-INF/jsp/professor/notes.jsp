@@ -12,7 +12,6 @@
     <link href="${pageContext.request.contextPath}/assets/components/professor/header/header.css" rel="stylesheet" type="text/css">
     <link href="${pageContext.request.contextPath}/assets/components/professor/left_sidebar/left_sidebar.css" rel="stylesheet" type="text/css">
     <link href="${pageContext.request.contextPath}/assets/components/professor/notes_table/notes_tables.css" rel="stylesheet" type="text/css">
-    <link href="${pageContext.request.contextPath}/assets/components/footer/footer.css" rel="stylesheet" type="text/css">
 </head>
 <body>
 <div class="layout">
@@ -22,10 +21,9 @@
         <jsp:include page='/assets/components/professor/header/header.jsp'/>
         <div class="inner-container">
             <main class="notes-main">
-                <h1>Mes cours</h1><br>
-                <jsp:include page='/assets/components/professor/classes_table/classes_table.jsp'/>
+                <h1>Mes notes attribuées</h1>
+                <jsp:include page='/assets/components/professor/notes_table/notes_table.jsp'/>
             </main>
-            <jsp:include page='/assets/components/footer/footer.jsp'/>
         </div>
     </main>
 </div>

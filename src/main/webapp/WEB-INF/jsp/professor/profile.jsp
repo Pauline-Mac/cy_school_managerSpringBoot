@@ -9,7 +9,6 @@
 		<link href="${pageContext.request.contextPath}/assets/components/button/button.css" rel="stylesheet" type="text/css">
 		<link href="${pageContext.request.contextPath}/assets/components/professor/header/header.css" rel="stylesheet" type="text/css">
 		<link href="${pageContext.request.contextPath}/assets/components/professor/left_sidebar/left_sidebar.css" rel="stylesheet" type="text/css">
-		<link href="${pageContext.request.contextPath}/assets/components/footer/footer.css" rel="stylesheet" type="text/css">
 		<link href="${pageContext.request.contextPath}/assets/components/user_profile/user_profile.css" rel="stylesheet" type="text/css">
 	</head>
 	<body>
@@ -20,7 +19,6 @@
 				<main>
 					<%@ include file='/assets/components/user_profile/user_profile.jsp' %>
 				</main>
-				<jsp:include page='/assets/components/footer/footer.jsp'/>
 			</div>
 		</div>
 	</body>

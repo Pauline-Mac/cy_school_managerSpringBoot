@@ -6,53 +6,31 @@
 		<th>Email</th>
 		<th>Nom</th>
 		<th>Prenom</th>
-		<th><c:choose>
-			<c:when test="${users[0].role == 'PROFESSOR'}">
-				Cours
-			</c:when>
-			<c:otherwise>
-				Classe
-			</c:otherwise>
-		</c:choose></th>
+		<th>
+			Classe
+		</th>
 	</tr>
 
-	<c:forEach items="${users}" var="user">
+	<c:forEach items="${student}" var="user">
 		<tr>
 			<td>
-				<a href=""><div class="item">${user.email}</div></a>
+				<a href=""><div class="item">${student.email}</div></a>
 			</td>
 			<td>
-				<a href=""><div class="item">${user.lastName}</div></a>
+				<a href=""><div class="item">${student.lastName}</div></a>
 			</td>
 			<td>
-				<a href=""><div class="item">${user.firstName}</div></a>
+				<a href=""><div class="item">${student.firstName}</div></a>
 			</td>
 			<td>
 				<a href="">
 					<div class="item">
 						<c:choose>
-							<c:when test="${user.role == 'PROFESSOR'}">
-								<c:choose>
-									<c:when test="${not empty user.courses}">
-										<c:forEach items="${user.courses}" var="course" varStatus="status">
-											${course.className}
-											<c:if test="${!status.last}">, </c:if>
-										</c:forEach>
-									</c:when>
-									<c:otherwise>
-										Aucun cours assigné
-									</c:otherwise>
-								</c:choose>
+							<c:when test="${student.studentGroup != null}">
+								${student.studentGroup.studentGroupName}
 							</c:when>
 							<c:otherwise>
-								<c:choose>
-									<c:when test="${user.studentGroup != null}">
-										${user.studentGroup.studentGroupName}
-									</c:when>
-									<c:otherwise>
-										Aucune classe assignée
-									</c:otherwise>
-								</c:choose>
+								Aucune classe assignée
 							</c:otherwise>
 						</c:choose>
 					</div>

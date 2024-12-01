@@ -1,5 +1,6 @@
 package app.repositories;
 
+import app.models.Enrollment;
 import app.models.Note;
 import app.models.User;
 import org.springframework.data.repository.CrudRepository;
@@ -11,5 +12,5 @@ import java.util.List;
 // CRUD refers Create, Read, Update, Delete
 @Repository
 public interface NoteRepository extends CrudRepository<Note, Integer> {
-    List<Note> findAll();
+    List<Note> getNotesByEnrollment(Enrollment enrollment);
 }

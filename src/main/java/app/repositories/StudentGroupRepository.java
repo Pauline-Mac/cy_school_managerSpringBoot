@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository;
 // CRUD refers Create, Read, Update, Delete
 @Repository
 public interface StudentGroupRepository extends CrudRepository<StudentGroup, Integer> {
-    Iterable<StudentGroup> findAll();
+    StudentGroup getStudentGroupByStudentGroupName(String studentgroupname);
 }

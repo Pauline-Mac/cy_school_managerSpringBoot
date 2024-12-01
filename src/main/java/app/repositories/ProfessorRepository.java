@@ -12,5 +12,5 @@ import java.util.List;
 // CRUD refers Create, Read, Update, Delete
 @Repository
 public interface ProfessorRepository extends CrudRepository<Professor, Integer> {
-    List<Professor> findAll();
+    Professor getProfessorByUserId(Long userId);
 }

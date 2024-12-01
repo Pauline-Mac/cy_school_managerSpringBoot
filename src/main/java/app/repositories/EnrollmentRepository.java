@@ -1,5 +1,6 @@
 package app.repositories;
 
+import app.models.Course;
 import app.models.Enrollment;
 import app.models.Student;
 import app.models.User;
@@ -13,4 +14,7 @@ import java.util.List;
 @Repository
 public interface EnrollmentRepository extends CrudRepository<Enrollment, Integer> {
     List<Enrollment> findAll();
+
+    Enrollment getEnrollmentByCourse(Course course);
+    List<Enrollment> getEnrollmentsByStudent(Student student);
 }

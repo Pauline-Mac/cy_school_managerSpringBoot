@@ -10,11 +10,5 @@ import java.util.List;
 // CRUD refers Create, Read, Update, Delete
 @Repository
 public interface UserRepository extends CrudRepository<User, Integer> {
-    List<User> findAll();
-    User findByUserId(Long user_id);
-
-    String getPasswordByEmail(String email);
-
     User findByEmail(String email);
-    // User findByEmail(String email);
 }
