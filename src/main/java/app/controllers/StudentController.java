@@ -3,7 +3,10 @@ package app.controllers;
 import app.models.*;
 import app.repositories.*;
 import app.services.mailing.GMailer;
+import app.services.pdfgenerator.PdfGenerator;
+import jakarta.enterprise.inject.Produces;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,6 +14,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -105,5 +112,26 @@ public class StudentController {
       request.setAttribute("error", "Unable to retrieve student information: " + e.getMessage());
     }
     return "/student/notes";
+  }
+
+  @GetMapping(value = "/notes/export", produces = {"application/pdf"})
+  public String NotesExport(Model model, HttpServletRequest request, HttpServletResponse response) {
+    User user = (User) request.getSession().getAttribute("user");
+    Student student = studentRepository.getStudentByUserId(user.getUserId());
+    List<Enrollment> enrollments = enrollmentRepository.getEnrollmentsByStudent(student);
+    String pdfPath = PdfGenerator.generateReportForStudent(student, enrollments);
+    try (FileInputStream fis = new FileInputStream(pdfPath); OutputStream os = response.getOutputStream()) {
+      response.setContentType("application/pdf");
+      response.setHeader("Content-Disposition", "attachment; filename=\"" + new File(pdfPath).getName() + "\"");
+
+      byte[] buffer = new byte[1024];
+      int bytesRead;
+      while ((bytesRead = fis.read(buffer)) != -1) {
+        os.write(buffer, 0, bytesRead);
+      }
+    } catch (Exception e) {
+      System.err.println(e.getMessage());
+    }
+    return "/student/notes/export";
   }
 }

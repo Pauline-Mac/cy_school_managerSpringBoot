@@ -1,8 +1,7 @@
-/*
 package app.services.pdfgenerator;
 
 import app.models.*;
-import app.repositories.*;
+import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
@@ -11,17 +10,17 @@ import org.xhtmlrenderer.pdf.ITextRenderer;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-public class PdfGenerator {
-    private static final String REPORTS_DIRECTORY = "src/main/webapp/reports";
-    static EnrollmentRepository enrollmentRepository;
+import java.util.*;
 
-    public static void generateReportForStudent(Student student) {
+@Service
+public class PdfGenerator {
+
+    private static final String REPORTS_DIRECTORY = "C:/tomcat/reports";
+
+    public static String generateReportForStudent(Student student, List<Enrollment> enrollments) {
+        String pdfPath = null;
         try {
-            Map<String, Object> data = prepareData(student);
+            Map<String, Object> data = prepareData(student, enrollments);
             TemplateEngine templateEngine = configureTemplateEngine();
 
             Context context = new Context();
@@ -37,7 +36,7 @@ public class PdfGenerator {
                     student.getFirstName(),
                     student.getLastName());
 
-            String pdfPath = new File(reportsDir, fileName).getAbsolutePath();
+            pdfPath = new File(reportsDir, fileName).getAbsolutePath();
 
             generatePdf(renderedHtml, pdfPath);
 
@@ -47,17 +46,16 @@ public class PdfGenerator {
             System.err.println("Erreur lors de la génération du PDF :");
             e.printStackTrace();
         }
+        return pdfPath;
     }
 
-    private static Map<String, Object> prepareData(Student student) {
+    private static Map<String, Object> prepareData(Student student, List<Enrollment> enrollments) {
         Map<String, Object> data = new HashMap<>();
 
         data.put("prenom", student.getFirstName());
         data.put("nom", student.getLastName());
         data.put("classe", student.getStudentGroup().getStudentGroupName());
         data.put("date", LocalDate.now().toString());
-
-        List<Enrollment> enrollments = enrollmentRepository.getEnrollmentsByStudent(student);
 
         List<Map<String, Object>> matieres = new ArrayList<>();
         double totalMoyennes = 0;
@@ -90,14 +88,11 @@ public class PdfGenerator {
                 ? totalMoyennes / nombreMatieresAvecNotes
                 : 0;
 
-
         data.put("matieres", matieres);
         data.put("moyenne", nombreMatieresAvecNotes > 0 ? String.format("%.2f", moyenneGenerale) : "Non calculable");
 
         return data;
     }
-
-
 
     private static void generatePdf(String htmlContent, String outputPath) throws Exception {
         try (FileOutputStream fos = new FileOutputStream(outputPath)) {
@@ -107,7 +102,6 @@ public class PdfGenerator {
             renderer.createPDF(fos);
         }
     }
-
 
     private static TemplateEngine configureTemplateEngine() {
         ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
@@ -123,4 +117,3 @@ public class PdfGenerator {
         return engine;
     }
 }
-*/
