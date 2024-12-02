@@ -30,7 +30,7 @@
         <div class="inner-container">
             <div class="users-main">
 
-                <form class="add-form" method="post" action="update-user-post">
+                <form class="add-form" method="post" action="updateuserpost">
 
                     <div class="add-user-form-title">
                         Profil de l'utilisateur
@@ -113,8 +113,9 @@
                             </c:when>
                         </c:choose>
 
+                                <input type="hidden" name="uuid" value="${user.uuid}">
 
-                    <input class="add-user-form-button add-user-input" type="submit" value="Confirmer">
+                                <input class="add-user-form-button add-user-input" type="submit" value="Confirmer">
 
                 </form>
 

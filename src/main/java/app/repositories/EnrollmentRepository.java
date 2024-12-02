@@ -19,4 +19,8 @@ public interface EnrollmentRepository extends CrudRepository<Enrollment, Integer
     Enrollment getEnrollmentByCourse(Course course);
     @Query("SELECT e FROM Enrollment e WHERE e.student = :student")
     List<Enrollment> getEnrollmentsByStudent(Student student);
+
+    Enrollment getEnrollmentByCourseAndStudent(Course course, Student user);
+
+    List<Enrollment> findAllByCourse(Course course);
 }

@@ -13,4 +13,6 @@ import java.util.List;
 @Repository
 public interface NoteRepository extends CrudRepository<Note, Integer> {
     List<Note> getNotesByEnrollment(Enrollment enrollment);
+
+    List<Note> findAllByEnrollment(Enrollment enrollment);
 }

@@ -1,6 +1,5 @@
 package app.repositories;
 
-import app.models.Professor;
 import app.models.Student;
 import app.models.StudentGroup;
 import org.springframework.data.jpa.repository.Query;
@@ -29,4 +28,10 @@ public interface StudentRepository extends CrudRepository<Student, Integer> {
             "   JOIN e.course c " +
             "   WHERE e.student = s AND LOWER(c.className) LIKE LOWER(CONCAT(:classname, '%'))))")
     List<Student> searchStudentByCriteria(String firstname, String lastname, String studentgroupname, String classname);
+
+    @Query("SELECT s FROM Student s")
+    List<Student> getAllStudents();
+
+    Student getStudentByUuidEquals(String uuid);
+
 }

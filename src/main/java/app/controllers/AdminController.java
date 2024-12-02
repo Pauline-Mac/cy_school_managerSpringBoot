@@ -4,13 +4,16 @@ import app.models.*;
 import app.repositories.*;
 import app.services.mailing.GMailer;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +37,10 @@ public class AdminController {
     private StudentController studentController;
     @Autowired
     private EnrollmentRepository enrollmentRepository;
+    @Autowired
+    private NoteRepository noteRepository;
+    @Autowired
+    private StudentGroupRepository studentGroupRepository;
 
   @GetMapping(path="/index")
   public String Index(Model model, HttpServletRequest request) {
@@ -168,15 +175,253 @@ public class AdminController {
 
   @GetMapping(path="/students")
   public String Students(Model model, HttpServletRequest request) {
-    Iterable<Student> students = studentRepository.findAll();
-    model.addAttribute("students", students);
+    Iterable<Student> students = studentRepository.getAllStudents();
+    model.addAttribute("users", students);
     return "admin/students";
   }
 
   @GetMapping(path="/professors")
   public String Professors(Model model) {
     Iterable<Professor> professors = professorRepository.findAll();
-    model.addAttribute("professors", professors);
+    model.addAttribute("users", professors);
     return "/admin/professors";
   }
+
+  @GetMapping(path="/showuser")
+  public String ShowUser(@RequestParam("uuid") String uuid, Model model) {
+    Student student = studentRepository.getStudentByUuidEquals(uuid);
+    if (student == null) {
+      return "redirect:/login";
+    }
+
+    model.addAttribute("user", student);
+    List<Enrollment> enrollments = enrollmentRepository.getEnrollmentsByStudent(studentRepository.getStudentByUuidEquals(uuid));
+    List<Course> courseList = new ArrayList<>();
+    for (Enrollment enrollment : enrollments) {
+      courseList.add(enrollment.getCourse());
+    }
+
+    model.addAttribute("courseList", courseList);
+    return "admin/show_user";
+  }
+
+  @GetMapping(path="/updateuser")
+  public String UpdateUser(@RequestParam("uuid") String uuid, Model model) {
+    User user = userRepository.findAllByUuidEquals(uuid);
+
+    if (user == null) {
+      model.addAttribute("error", "Utilisateur non trouvé");
+      return "redirect:/admin/index";
+    }
+
+    List<Enrollment> enrollmentList = enrollmentRepository.findAll();
+    List<Course> courseList = new ArrayList<>();
+
+    for (Enrollment enrollment : enrollmentList) {
+      if (enrollment.getStudent().equals(user)) {
+        courseList.add(enrollment.getCourse());
+      }
+    }
+
+    model.addAttribute("user", user);
+    model.addAttribute("courseList", courseList);
+    return "admin/update_user";
+  }
+
+  @PostMapping("/updateuserpost")
+  public String updateUserPost(
+          @RequestParam("uuid") String uuid,
+          @RequestParam(required = false) String first_name,
+          @RequestParam(required = false) String last_name,
+          @RequestParam(required = false) String email,
+          @RequestParam(required = false) String tel,
+          @RequestParam(required = false) String birth_date,
+          @RequestParam(required = false, name = "class[]") List<String> classes,
+          Model model) {
+    try {
+      User user = userRepository.findAllByUuidEquals(uuid);
+
+      if (user == null) {
+        model.addAttribute("error", "Utilisateur non trouvé");
+        return "redirect:/admin/index";
+      }
+
+      if (first_name != null && !first_name.isBlank()) user.setFirstName(first_name);
+      if (last_name != null && !last_name.isBlank()) user.setLastName(last_name);
+      if (email != null && !email.isBlank()) user.setEmail(email);
+      if (tel != null && !tel.isBlank()) user.setPhone(tel);
+      if (birth_date != null && !birth_date.isBlank()) {
+        user.setBirthDate(LocalDate.parse(birth_date));
+      }
+
+      userRepository.save(user);
+
+      if ("STUDENT".equals(user.getRole())) {
+        List<Course> courseList = new ArrayList<>();
+        List<Enrollment> enrollmentEntities = enrollmentRepository.findAll();
+
+        for (Enrollment enrollment : enrollmentEntities) {
+          if (enrollment.getStudent().equals(user)) {
+            courseList.add(enrollment.getCourse());
+          }
+        }
+
+        if (classes != null) {
+          for (String classId : classes) {
+            Course course = courseRepository.getCourseByClassIdEquals(Long.parseLong(classId));
+            Student student = studentRepository.getStudentByUserId(user.getUserId());
+
+            if (!courseList.contains(course)) {
+              Enrollment enrollment = new Enrollment(student, course);
+              enrollmentRepository.save(enrollment);
+            }
+          }
+        }
+
+        for (Course course : courseList) {
+          if (classes == null || !classes.contains(String.valueOf(course.getClassId()))) {
+            Enrollment enrollment = enrollmentRepository.getEnrollmentByCourseAndStudent(course, (Student) user);
+            if (enrollment != null) {
+              enrollmentRepository.delete(enrollment);
+            }
+          }
+        }
+      }
+  /*
+      gMailer.sendInfoModificationConfirmation(user);
+      if ("STUDENT".equals(user.getRole())) {
+        gMailer.sendClassModification((Student) user);
+      }*/
+
+      model.addAttribute("success", "Utilisateur mis à jour avec succès");
+    } catch (Exception e) {
+      model.addAttribute("error", "Erreur lors de la mise à jour : " + e.getMessage());
+      e.printStackTrace();
+    }
+
+    return "redirect:/admin/index";
+  }
+
+  @GetMapping("/removeuser")
+  public String RemoveUser(@RequestParam("uuid") String uuid, RedirectAttributes redirectAttributes, HttpSession session) {
+    try {
+
+      User user = userRepository.findAllByUuidEquals(uuid);
+
+      if (user == null) {
+        throw new IllegalStateException("Aucun utilisateur trouvé avec l'UUID : " + uuid);
+      }
+
+      if ("STUDENT".equals(user.getRole())) {
+
+        Student student = studentRepository.getStudentByUserId(user.getUserId());
+
+
+        List<Enrollment> enrollments = enrollmentRepository.getEnrollmentsByStudent(student);
+        for (Enrollment enrollment : enrollments) {
+          List<Note> notes = noteRepository.findAllByEnrollment(enrollment);
+          noteRepository.deleteAll(notes);
+          enrollmentRepository.delete(enrollment);
+        }
+
+        studentRepository.delete(student);
+
+      } else if ("PROFESSOR".equals(user.getRole())) {
+
+        Professor professor = professorRepository.getProfessorByUserId(user.getUserId());
+
+
+        List<Course> courses = courseRepository.findAllByProfessor(professor);
+        for (Course course : courses) {
+          List<Enrollment> enrollments = enrollmentRepository.findAllByCourse(course);
+          for (Enrollment enrollment : enrollments) {
+            List<Note> notes = noteRepository.findAllByEnrollment(enrollment);
+            noteRepository.deleteAll(notes);
+            enrollmentRepository.delete(enrollment);
+          }
+
+          courseRepository.delete(course);
+        }
+
+        professorRepository.delete(professor);
+
+      } else {
+        throw new IllegalArgumentException("Rôle non pris en charge pour la suppression : " + user.getRole());
+      }
+
+      redirectAttributes.addFlashAttribute("success", "Utilisateur supprimé avec succès.");
+      session.setAttribute("succes", "un succes");
+    } catch (Exception e) {
+      redirectAttributes.addFlashAttribute("error", "Échec lors de la suppression de l'utilisateur : " + e.getMessage());
+
+      e.printStackTrace();
+    }
+
+    return "redirect:/admin/index";
+  }
+
+  @GetMapping("/adduser")
+  public String AddUserget(){
+    return "admin/add_user";
+  }
+
+  @PostMapping("/adduser")
+  public String addUser(
+          @RequestParam String last_name,
+          @RequestParam String first_name,
+          @RequestParam String email,
+          @RequestParam String tel,
+          @RequestParam String birth_date,
+          @RequestParam String role,
+          @RequestParam(required = false) String group_id,
+          @RequestParam(required = false) String[] classNames,
+          RedirectAttributes redirectAttributes) {
+
+    try {
+      LocalDate localDate = LocalDate.parse(birth_date);
+      String groupId = "";
+
+      if ("student".equals(role)) {
+        groupId = group_id;
+      }
+
+      Student student = null;
+      Professor professor = null;
+      Enrollment enrollment = null;
+      Course course = null;
+
+      if ("student".equals(role)) {
+        List<StudentGroup> studentGroupList = studentGroupRepository.findStudentGroupByStudentGroupNameEquals(groupId);
+        StudentGroup studentGroup = studentGroupList.isEmpty() ?
+                new StudentGroup(groupId) : studentGroupList.get(0);
+        if (studentGroupList.isEmpty()) {
+          studentGroupRepository.save(studentGroup);
+        }
+
+        student = new Student(email, "password", last_name, first_name, localDate, tel, studentGroup);
+        studentRepository.save(student);
+
+        if (classNames != null && classNames.length > 0) {
+          for (String className : classNames) {
+            course = courseRepository.findCourseByClassNameEquals(className);
+            enrollment = new Enrollment(student, course);
+            enrollmentRepository.save(enrollment);
+          }
+        }
+
+      } else {
+
+        professor = new Professor(email, "password", last_name, first_name, localDate, tel);
+        professorRepository.save(professor);
+      }
+
+      redirectAttributes.addFlashAttribute("success", "Ajout effectué avec succès");
+    } catch (Exception e) {
+      e.printStackTrace();
+      redirectAttributes.addFlashAttribute("error", "Echec lors de l'ajout d'un utilisateur");
+    }
+
+    return "redirect:/index";
+  }
+
 }

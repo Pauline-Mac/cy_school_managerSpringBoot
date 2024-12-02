@@ -61,9 +61,9 @@
 						</div>
 					</a>
 				</td>
-				<td><a href="show-user?uuid=${user.uuid}">Afficher</a></td>
-				<td><a href="update-user?uuid=${user.uuid}">Modifier</a></td>
-				<td><a href="remove-user?uuid=${user.uuid}">Supprimer</a></td>
+				<td><a href="showuser?uuid=${user.uuid}">Afficher</a></td>
+				<td><a href="updateuser?uuid=${user.uuid}">Modifier</a></td>
+				<td><a href="removeuser?uuid=${user.uuid}">Supprimer</a></td>
 			</tr>
 		</c:forEach>
 	</table>
