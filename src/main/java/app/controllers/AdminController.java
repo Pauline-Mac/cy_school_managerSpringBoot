@@ -4,8 +4,11 @@ import app.models.*;
 import app.repositories.*;
 import app.services.mailing.GMailer;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -437,7 +440,44 @@ public class AdminController {
     return filteredCourses;
   }
 
+  @PostMapping(path = "/classsearch", produces = {"application/json"})
+  public ResponseEntity<String> searchClass(Model model, HttpServletRequest request, HttpServletResponse response) {
 
+    String search = request.getParameter("class");
+    List<Course> allCourses = (List<Course>) courseRepository.findAll();
+    List<Course> courses = new ArrayList<Course>();
+    StringBuilder sb = new StringBuilder();
+
+    response.setContentType("application/json");
+
+
+
+    for (Course course : allCourses) {
+      if (course.getClassName().toLowerCase().contains(search.toLowerCase())) {
+        courses.add(course);
+      }
+    }
+
+    int courseNum = courses.size();
+    sb.append("{");
+    sb.append("\"classes\": [");
+    for (int i = 0; i < courseNum; i++) {
+      Course course = courses.get(i);
+      sb.append("{");
+      sb.append("\"name\": \"").append(course.getClassName()).append("\",");
+      sb.append("\"id\":\"").append(course.getClassId()).append("\"");
+      sb.append("}");
+      if (i != courseNum - 1) {
+        sb.append(",");
+      }
+    }
+
+    sb.append("]");
+    sb.append("}");
+
+
+    return new ResponseEntity<>(sb.toString(), HttpStatus.OK);
+  }
 
 
 }
