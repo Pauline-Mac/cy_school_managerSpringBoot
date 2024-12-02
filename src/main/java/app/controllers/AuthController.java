@@ -28,12 +28,13 @@ public class AuthController {
 
 	@GetMapping("/authenticate")
 	@RequestMapping(value = "authenticate", method = RequestMethod.POST)
-	public String Authenticate(@RequestParam("email") String email, @RequestParam("password") String password, HttpServletRequest request) {
+	public String Authenticate(@RequestParam("email") String email, @RequestParam("password") String password, HttpServletRequest request, RedirectAttributes redirectAttributes) {
 		User user = authService.authenticate(email, password);
 		if (user != null){
 			request.getSession().setAttribute("user", userRepository.findByEmail(email));
 			return "redirect:/" + user.getRole().toLowerCase() + "/index";
 		} else {
+			redirectAttributes.addFlashAttribute("errorMessage", "Email ou mot de passe incorect");
 			return "redirect:/login";
 		}
 
