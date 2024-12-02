@@ -1,7 +1,9 @@
 package app.repositories;
 
+import app.models.Professor;
 import app.models.Student;
 import app.models.StudentGroup;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -17,4 +19,14 @@ public interface StudentRepository extends CrudRepository<Student, Integer> {
     Student getStudentByEmail(String email);
 
     Student getStudentByUserId(Long userId);
+
+    @Query("SELECT s FROM Student s WHERE " +
+            "(:firstname IS NULL OR LOWER(s.firstName) LIKE LOWER(CONCAT(:firstname, '%'))) AND " +
+            "(:lastname IS NULL OR LOWER(s.lastName) LIKE LOWER(CONCAT(:lastname, '%'))) AND " +
+            "(:studentgroupname IS NULL OR LOWER(s.studentGroup.studentGroupName) LIKE LOWER(CONCAT(:studentgroupname, '%'))) AND " +
+            "(:classname IS NULL OR EXISTS (" +
+            "   SELECT e FROM Enrollment e " +
+            "   JOIN e.course c " +
+            "   WHERE e.student = s AND LOWER(c.className) LIKE LOWER(CONCAT(:classname, '%'))))")
+    List<Student> searchStudentByCriteria(String firstname, String lastname, String studentgroupname, String classname);
 }

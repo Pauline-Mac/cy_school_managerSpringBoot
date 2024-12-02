@@ -1,11 +1,8 @@
 package app.controllers;
 
-import app.models.Professor;
-import app.models.Student;
-import app.models.User;
-import app.repositories.ProfessorRepository;
-import app.repositories.StudentRepository;
-import app.repositories.UserRepository;
+import app.models.*;
+import app.repositories.*;
+import app.services.mailing.GMailer;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -15,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Locale;
 
 // This means that this class is a Controller
@@ -30,6 +28,12 @@ public class AdminController {
   private ProfessorRepository professorRepository;
   @Autowired
   private StudentRepository studentRepository;
+    @Autowired
+    private CourseRepository courseRepository;
+    @Autowired
+    private StudentController studentController;
+    @Autowired
+    private EnrollmentRepository enrollmentRepository;
 
   @GetMapping(path="/index")
   public String Index(Model model, HttpServletRequest request) {
@@ -42,6 +46,125 @@ public class AdminController {
     request.getSession().getAttribute("user");
     return "admin/profile";
   }
+
+  @GetMapping(path="/addclass")
+  public String AddClass(HttpServletRequest request) {
+    request.getSession().getAttribute("user");
+    return "admin/addclass";
+  }
+
+  @PostMapping("/addclass")
+  public String handleAddClass(
+          @RequestParam(value = "action", required = false) String action,
+          @RequestParam(value = "nom", required = false) String nom,
+          @RequestParam(value = "prenom", required = false) String prenom,
+          @RequestParam(value = "email", required = false) String email,
+          @RequestParam(value = "new_class_name", required = false) String newClassName,
+          @RequestParam(value = "selected_professor", required = false) String selectedProfessorEmail,
+          Model model) {
+
+    if ("search".equals(action)) {
+      List<Professor> resultats = professorRepository.searchProfessorByCriteria(prenom, nom, email);
+
+      model.addAttribute("resultats", resultats);
+      System.out.println("Résultats de la recherche :");
+      resultats.forEach(prof -> System.out.println("Professeur : " + prof.getFirstName()));
+
+    } else if ("createClass".equals(action)) {
+      if (newClassName == null || newClassName.isEmpty()) {
+        model.addAttribute("error", "Veuillez entrer un nom de classe.");
+      } else if (selectedProfessorEmail == null || selectedProfessorEmail.isEmpty()) {
+        model.addAttribute("error", "Veuillez sélectionner un professeur.");
+      } else {
+        List<Course> existingClasses = courseRepository.findAllByClassNameEquals(newClassName);
+        if (!existingClasses.isEmpty()) {
+          model.addAttribute("error", "Une classe avec ce nom existe déjà.");
+        } else {
+          List<Professor> professors = professorRepository.findAllByEmailEquals(selectedProfessorEmail);
+          if (!professors.isEmpty()) {
+            Professor professor = (Professor) professors.get(0);
+
+            Course newClass = new Course(newClassName, professor);
+            courseRepository.save(newClass);
+
+            professor.getCourses().add(newClass);
+
+            model.addAttribute("message", "La classe a été créée avec succès !");
+          } else {
+            model.addAttribute("error", "Le professeur sélectionné n'existe pas.");
+          }
+        }
+      }
+    }
+
+    return "admin/addclass";
+  }
+
+  @GetMapping(path="/addenrollment")
+  public String AddEnrollment(HttpServletRequest request) {
+    Object user = request.getSession().getAttribute("user");
+    if (user == null) {
+      return "redirect:/login";
+    }
+    return "admin/addenrollment";
+  }
+
+  @PostMapping("/addenrollment")
+  public String handleAddEnrollment(
+          @RequestParam(value = "action", required = false) String action,
+          @RequestParam(value = "nom", required = false) String nom,
+          @RequestParam(value = "prenom", required = false) String prenom,
+          @RequestParam(value = "studentgroupname", required = false) String studentGroupName,
+          @RequestParam(value = "selected_student", required = false) String selectedStudentEmail,
+          @RequestParam(value = "choosen_course", required = false) String selectedCourse,
+          Model model) {
+
+    if ("search".equals(action)) {
+      List<Student> resultats = studentRepository.searchStudentByCriteria(prenom, nom, studentGroupName, null);
+      model.addAttribute("resultats", resultats);
+
+    } else if ("choisir class".equals(action)) {
+      Student selectedStudent = studentRepository.getStudentByEmail(selectedStudentEmail);
+      if (selectedStudent != null) {
+        model.addAttribute("selectedStudent", selectedStudent);
+
+        List<Course> availableCourses = courseRepository.getAvailableCoursesForStudent(selectedStudent.getUserId());
+        model.addAttribute("courses", availableCourses);
+      }
+
+    } else if ("addEnrollment".equals(action)) {
+      if (selectedStudentEmail != null && selectedCourse != null && !selectedCourse.isEmpty()) {
+        try {
+          Student selectedStudent = studentRepository.getStudentByEmail(selectedStudentEmail);
+          Course course = courseRepository.getCourseByClassNameEquals(selectedCourse);
+
+          if (selectedStudent != null && course != null) {
+            Enrollment newEnrollment = new Enrollment(selectedStudent, course);
+            enrollmentRepository.save(newEnrollment);
+
+            try {
+              GMailer mailer = new GMailer();
+              mailer.sendNewInscriptionNotification(newEnrollment);
+            } catch (Exception e) {
+              throw new RuntimeException("Erreur lors de l'envoi du mail : " + e.getMessage());
+            }
+
+            model.addAttribute("message", "Inscription réussie !");
+          } else {
+            model.addAttribute("error", "Étudiant ou cours invalide.");
+          }
+        } catch (Exception e) {
+          model.addAttribute("error", "Erreur lors de l'inscription : " + e.getMessage());
+        }
+      } else {
+        model.addAttribute("error", "Veuillez sélectionner un étudiant et un cours.");
+      }
+    }
+
+    return "admin/addenrollment";
+  }
+
+
 
   @GetMapping(path="/students")
   public String Students(Model model, HttpServletRequest request) {

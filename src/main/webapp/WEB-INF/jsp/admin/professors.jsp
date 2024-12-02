@@ -21,48 +21,21 @@
 	<main class="container">
 		<jsp:include page='/assets/components/admin/header/header.jsp'/>
 
+		<%@ include file='/assets/components/admin/left_sidebar/left_sidebar.jsp' %>
+
 		<div class="inner-container">
-			<main class="users-main">
-				<h1>Professeurs</h1>
-				<table class="users-table">
-					<tr>
-						<th>Email</th>
-						<th>Nom</th>
-						<th>Prenom</th>
-						<th>Cours</th>
-					</tr>
-					<c:forEach items="${professors}" var="professor">
-						<tr>
-							<td>
-								<a href=""><div class="item">${professor.email}</div></a>
-							</td>
-							<td>
-								<a href=""><div class="item">${professor.lastName}</div></a>
-							</td>
-							<td>
-								<a href=""><div class="item">${professor.firstName}</div></a>
-							</td>
-							<td>
-								<a href="">
-									<div class="item">
-										<c:choose>
-											<c:when test="${not empty professor.courses}">
-												<c:forEach items="${professor.courses}" var="course" varStatus="status">
-													${course.className}
-													<c:if test="${!status.last}">, </c:if>
-												</c:forEach>
-											</c:when>
-											<c:otherwise>
-												Aucun cours assigné
-											</c:otherwise>
-										</c:choose>
-									</div>
-								</a>
-							</td>
-						</tr>
-					</c:forEach>
-				</table>
-			</main>
+
+			<div class="users-main">
+
+				<div class="users-title">
+					<h1>Professeurs</h1>
+					<a class="add-user-link" href="adduser">Ajouter un professeur</a>
+				</div>
+
+				<jsp:include page='/assets/components/admin/users_table/users_table.jsp'/>
+
+
+			</div>
 		</div>
 	</main>
 </div>
