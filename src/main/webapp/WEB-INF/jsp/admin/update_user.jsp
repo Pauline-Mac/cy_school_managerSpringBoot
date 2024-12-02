@@ -103,6 +103,8 @@
                                 </div>
 
 
+
+
                                 <input type="text" id="add-class-input" class="add-user-input" oninput="classSearch()">
 
                                 <div class="class-suggestions" id="class-suggestions">

@@ -11,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -31,30 +32,30 @@ public class AdminController {
   private ProfessorRepository professorRepository;
   @Autowired
   private StudentRepository studentRepository;
-    @Autowired
-    private CourseRepository courseRepository;
-    @Autowired
-    private StudentController studentController;
-    @Autowired
-    private EnrollmentRepository enrollmentRepository;
-    @Autowired
-    private NoteRepository noteRepository;
-    @Autowired
-    private StudentGroupRepository studentGroupRepository;
+  @Autowired
+  private CourseRepository courseRepository;
+  @Autowired
+  private StudentController studentController;
+  @Autowired
+  private EnrollmentRepository enrollmentRepository;
+  @Autowired
+  private NoteRepository noteRepository;
+  @Autowired
+  private StudentGroupRepository studentGroupRepository;
 
-  @GetMapping(path="/index")
+  @GetMapping(path = "/index")
   public String Index(Model model, HttpServletRequest request) {
     request.getSession().getAttribute("user");
     return "admin/index";
   }
 
-  @GetMapping(path="/profile")
+  @GetMapping(path = "/profile")
   public String Profile(HttpServletRequest request) {
     request.getSession().getAttribute("user");
     return "admin/profile";
   }
 
-  @GetMapping(path="/addclass")
+  @GetMapping(path = "/addclass")
   public String AddClass(HttpServletRequest request) {
     request.getSession().getAttribute("user");
     return "admin/addclass";
@@ -107,12 +108,9 @@ public class AdminController {
     return "admin/addclass";
   }
 
-  @GetMapping(path="/addenrollment")
+  @GetMapping(path = "/addenrollment")
   public String AddEnrollment(HttpServletRequest request) {
     Object user = request.getSession().getAttribute("user");
-    if (user == null) {
-      return "redirect:/login";
-    }
     return "admin/addenrollment";
   }
 
@@ -172,22 +170,21 @@ public class AdminController {
   }
 
 
-
-  @GetMapping(path="/students")
+  @GetMapping(path = "/students")
   public String Students(Model model, HttpServletRequest request) {
     Iterable<Student> students = studentRepository.getAllStudents();
     model.addAttribute("users", students);
     return "admin/students";
   }
 
-  @GetMapping(path="/professors")
+  @GetMapping(path = "/professors")
   public String Professors(Model model) {
     Iterable<Professor> professors = professorRepository.findAll();
     model.addAttribute("users", professors);
     return "/admin/professors";
   }
 
-  @GetMapping(path="/showuser")
+  @GetMapping(path = "/showuser")
   public String ShowUser(@RequestParam("uuid") String uuid, Model model) {
     Student student = studentRepository.getStudentByUuidEquals(uuid);
     if (student == null) {
@@ -205,7 +202,7 @@ public class AdminController {
     return "admin/show_user";
   }
 
-  @GetMapping(path="/updateuser")
+  @GetMapping(path = "/updateuser")
   public String UpdateUser(@RequestParam("uuid") String uuid, Model model) {
     User user = userRepository.findAllByUuidEquals(uuid);
 
@@ -361,7 +358,7 @@ public class AdminController {
   }
 
   @GetMapping("/adduser")
-  public String AddUserget(){
+  public String AddUserget() {
     return "admin/add_user";
   }
 
@@ -423,5 +420,24 @@ public class AdminController {
 
     return "redirect:/index";
   }
+
+
+  @ResponseBody
+  @PostMapping("/class-search")
+  public List<Course> searchClasses(@RequestParam String className) {
+    List<Course> allCourses = (List<Course>) courseRepository.findAll();
+    List<Course> filteredCourses = new ArrayList<>();
+
+    for (Course course : allCourses) {
+      if (course.getClassName().toLowerCase().contains(className.toLowerCase())) {
+        filteredCourses.add(course);
+      }
+    }
+
+    return filteredCourses;
+  }
+
+
+
 
 }

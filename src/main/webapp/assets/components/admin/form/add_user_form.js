@@ -99,7 +99,7 @@ function classSearch() {
     checkClassList();
 
     var xhr = new XMLHttpRequest();
-    var url = "/cy_school_manager/class-search";
+    var url = "/admin/class-search";
 
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4 && xhr.status === 200) {
